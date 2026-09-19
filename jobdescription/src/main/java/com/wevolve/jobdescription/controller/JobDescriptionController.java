@@ -3,10 +3,9 @@ package com.wevolve.jobdescription.controller;
 import com.wevolve.jobdescription.dto.JobDescriptionRequest;
 import com.wevolve.jobdescription.dto.JobDescriptionResponse;
 import com.wevolve.jobdescription.model.JobDescription;
+import com.wevolve.jobdescription.service.AiJobDescriptionService;
 import com.wevolve.jobdescription.service.JobDescriptionService;
-
 import jakarta.validation.Valid;
-
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,14 +16,16 @@ import java.util.List;
 public class JobDescriptionController {
 
     private final JobDescriptionService jobDescriptionService;
+    private final AiJobDescriptionService aiJobDescriptionService;
 
     public JobDescriptionController(
-            JobDescriptionService jobDescriptionService) {
+            JobDescriptionService jobDescriptionService,
+            AiJobDescriptionService aiJobDescriptionService) {
 
         this.jobDescriptionService = jobDescriptionService;
+        this.aiJobDescriptionService = aiJobDescriptionService;
     }
 
-    // Generate a job description
     @PostMapping("/generate")
     public JobDescriptionResponse generate(
             @Valid @RequestBody JobDescriptionRequest request) {
@@ -32,7 +33,13 @@ public class JobDescriptionController {
         return jobDescriptionService.generateJobDescription(request);
     }
 
-    // Save a generated job description
+    @PostMapping("/generate-ai")
+    public JobDescriptionResponse generateWithAI(
+            @Valid @RequestBody JobDescriptionRequest request) {
+
+        return aiJobDescriptionService.generateWithAI(request);
+    }
+
     @PostMapping("/save")
     public JobDescription save(
             @Valid @RequestBody JobDescriptionRequest request) {
@@ -40,34 +47,25 @@ public class JobDescriptionController {
         JobDescriptionResponse response =
                 jobDescriptionService.generateJobDescription(request);
 
-        return jobDescriptionService.saveJobDescription(
-                request,
-                response
-        );
+        return jobDescriptionService.saveJobDescription(request, response);
     }
 
-    // Save an edited job description
-    @PostMapping("/save-edited")
-    public JobDescription saveEdited(
-            @RequestBody JobDescription jobDescription) {
-
-        return jobDescriptionService.saveEditedJobDescription(
-                jobDescription
-        );
-    }
-
-    // Get all saved job descriptions
     @GetMapping
     public List<JobDescription> getAllJobDescriptions() {
-
         return jobDescriptionService.getAllJobDescriptions();
     }
 
-    // Get a job description by ID
     @GetMapping("/{id}")
     public JobDescription getJobDescriptionById(
             @PathVariable Long id) {
 
         return jobDescriptionService.getJobDescriptionById(id);
+    }
+
+    @PostMapping("/save-edited")
+    public JobDescription saveEdited(
+            @RequestBody JobDescription jobDescription) {
+
+        return jobDescriptionService.saveEditedJobDescription(jobDescription);
     }
 }
