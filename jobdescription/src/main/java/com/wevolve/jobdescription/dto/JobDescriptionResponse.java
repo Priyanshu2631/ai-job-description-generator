@@ -13,6 +13,9 @@ public class JobDescriptionResponse {
     private List<String> whatWeOffer;
     private String companyDescription;
 
+    public JobDescriptionResponse() {
+    }
+
     public JobDescriptionResponse(
             String jobTitle,
             String aboutTheRole,
@@ -37,31 +40,63 @@ public class JobDescriptionResponse {
         return jobTitle;
     }
 
+    public void setJobTitle(String jobTitle) {
+        this.jobTitle = jobTitle;
+    }
+
     public String getAboutTheRole() {
         return aboutTheRole;
+    }
+
+    public void setAboutTheRole(String aboutTheRole) {
+        this.aboutTheRole = aboutTheRole;
     }
 
     public List<String> getResponsibilities() {
         return responsibilities;
     }
 
+    public void setResponsibilities(List<String> responsibilities) {
+        this.responsibilities = responsibilities;
+    }
+
     public List<String> getRequiredSkills() {
         return requiredSkills;
+    }
+
+    public void setRequiredSkills(List<String> requiredSkills) {
+        this.requiredSkills = requiredSkills;
     }
 
     public List<String> getPreferredSkills() {
         return preferredSkills;
     }
 
+    public void setPreferredSkills(List<String> preferredSkills) {
+        this.preferredSkills = preferredSkills;
+    }
+
     public String getExperience() {
         return experience;
+    }
+
+    public void setExperience(String experience) {
+        this.experience = experience;
     }
 
     public List<String> getWhatWeOffer() {
         return whatWeOffer;
     }
 
+    public void setWhatWeOffer(List<String> whatWeOffer) {
+        this.whatWeOffer = whatWeOffer;
+    }
+
     public String getCompanyDescription() {
         return companyDescription;
+    }
+
+    public void setCompanyDescription(String companyDescription) {
+        this.companyDescription = companyDescription;
     }
 }

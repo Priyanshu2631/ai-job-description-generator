@@ -21,12 +21,9 @@ public class JobDescriptionService {
             JobDescriptionRepository jobDescriptionRepository,
             ObjectMapper objectMapper) {
 
-        this.jobDescriptionRepository =
-                jobDescriptionRepository;
-
+        this.jobDescriptionRepository = jobDescriptionRepository;
         this.objectMapper = objectMapper;
     }
-
 
     // --------------------------------------------------
     // GENERATE JOB DESCRIPTION
@@ -35,64 +32,42 @@ public class JobDescriptionService {
     public JobDescriptionResponse generateJobDescription(
             JobDescriptionRequest request) {
 
-        String jobTitle =
-                request.getJobTitle();
+        String jobTitle = request.getJobTitle();
+        String industry = request.getIndustry();
+        String experienceLevel = request.getExperienceLevel();
+        List<String> skills = request.getSkills();
 
-        String industry =
-                request.getIndustry();
+        String aboutTheRole = generateAboutRole(
+                jobTitle,
+                industry,
+                experienceLevel
+        );
 
-        String experienceLevel =
-                request.getExperienceLevel();
+        List<String> responsibilities = generateResponsibilities(
+                jobTitle,
+                industry,
+                skills
+        );
 
-        List<String> skills =
-                request.getSkills();
+        List<String> requiredSkills = new ArrayList<>(skills);
 
+        List<String> preferredSkills = generatePreferredSkills(
+                skills,
+                industry
+        );
 
-        String aboutTheRole =
-                generateAboutRole(
-                        jobTitle,
-                        industry,
-                        experienceLevel
-                );
+        String experience = generateExperience(
+                experienceLevel
+        );
 
+        List<String> benefits = generateBenefits(
+                request.getCompanyCulture()
+        );
 
-        List<String> responsibilities =
-                generateResponsibilities(
-                        jobTitle,
-                        industry,
-                        skills
-                );
-
-
-        List<String> requiredSkills =
-                new ArrayList<>(skills);
-
-
-        List<String> preferredSkills =
-                generatePreferredSkills(
-                        skills,
-                        industry
-                );
-
-
-        String experience =
-                generateExperience(
-                        experienceLevel
-                );
-
-
-        List<String> benefits =
-                generateBenefits(
-                        request.getCompanyCulture()
-                );
-
-
-        String companyDescription =
-                generateCompanyDescription(
-                        industry,
-                        request.getCompanyCulture()
-                );
-
+        String companyDescription = generateCompanyDescription(
+                industry,
+                request.getCompanyCulture()
+        );
 
         return new JobDescriptionResponse(
                 jobTitle,
@@ -106,7 +81,6 @@ public class JobDescriptionService {
         );
     }
 
-
     // --------------------------------------------------
     // ABOUT ROLE
     // --------------------------------------------------
@@ -118,9 +92,7 @@ public class JobDescriptionService {
 
         String levelText;
 
-        switch (
-                experienceLevel.toLowerCase()
-        ) {
+        switch (experienceLevel.toLowerCase()) {
 
             case "entry":
                 levelText = "Entry-level";
@@ -138,10 +110,7 @@ public class JobDescriptionService {
                 levelText = experienceLevel;
         }
 
-
-        String industryFocus =
-                getIndustryFocus(industry);
-
+        String industryFocus = getIndustryFocus(industry);
 
         return "We are looking for a "
                 + levelText
@@ -156,7 +125,6 @@ public class JobDescriptionService {
                 + "and contribute to meaningful business outcomes.";
     }
 
-
     // --------------------------------------------------
     // RESPONSIBILITIES
     // --------------------------------------------------
@@ -166,9 +134,7 @@ public class JobDescriptionService {
             String industry,
             List<String> skills) {
 
-        List<String> responsibilities =
-                new ArrayList<>();
-
+        List<String> responsibilities = new ArrayList<>();
 
         responsibilities.add(
                 "Design, develop and maintain high-quality "
@@ -176,13 +142,11 @@ public class JobDescriptionService {
                         + " solutions."
         );
 
-
         responsibilities.add(
                 "Collaborate with product, engineering and "
                         + "business teams to understand requirements "
                         + "and deliver effective solutions."
         );
-
 
         responsibilities.add(
                 "Build and improve applications using "
@@ -190,31 +154,25 @@ public class JobDescriptionService {
                         + "."
         );
 
-
         responsibilities.add(
                 getIndustryResponsibility(industry)
         );
-
 
         responsibilities.add(
                 "Write clean, maintainable and well-documented code."
         );
 
-
         responsibilities.add(
                 "Participate in testing, debugging and code reviews."
         );
-
 
         responsibilities.add(
                 "Continuously learn and adopt relevant technologies "
                         + "and development practices."
         );
 
-
         return responsibilities;
     }
-
 
     // --------------------------------------------------
     // INDUSTRY RESPONSIBILITY
@@ -223,9 +181,7 @@ public class JobDescriptionService {
     private String getIndustryResponsibility(
             String industry) {
 
-        String value =
-                industry.toLowerCase();
-
+        String value = industry.toLowerCase();
 
         if (value.contains("fintech")
                 || value.contains("finance")
@@ -236,7 +192,6 @@ public class JobDescriptionService {
                     + "financial technology requirements.";
         }
 
-
         if (value.contains("health")
                 || value.contains("medical")) {
 
@@ -244,7 +199,6 @@ public class JobDescriptionService {
                     + "data privacy, security and healthcare-specific "
                     + "requirements.";
         }
-
 
         if (value.contains("ecommerce")
                 || value.contains("retail")) {
@@ -254,7 +208,6 @@ public class JobDescriptionService {
                     + "experiences.";
         }
 
-
         if (value.contains("software")
                 || value.contains("technology")
                 || value.contains("saas")) {
@@ -263,7 +216,6 @@ public class JobDescriptionService {
                     + "solutions aligned with product and technology goals.";
         }
 
-
         if (value.contains("education")
                 || value.contains("edtech")) {
 
@@ -271,11 +223,9 @@ public class JobDescriptionService {
                     + "support effective learning and user engagement.";
         }
 
-
         return "Develop solutions aligned with industry requirements, "
                 + "business objectives and user needs.";
     }
-
 
     // --------------------------------------------------
     // INDUSTRY FOCUS
@@ -284,9 +234,7 @@ public class JobDescriptionService {
     private String getIndustryFocus(
             String industry) {
 
-        String value =
-                industry.toLowerCase();
-
+        String value = industry.toLowerCase();
 
         if (value.contains("fintech")
                 || value.contains("finance")
@@ -295,13 +243,11 @@ public class JobDescriptionService {
             return "building secure and scalable financial technology solutions";
         }
 
-
         if (value.contains("health")
                 || value.contains("medical")) {
 
             return "building reliable technology solutions for healthcare workflows";
         }
-
 
         if (value.contains("ecommerce")
                 || value.contains("retail")) {
@@ -309,13 +255,11 @@ public class JobDescriptionService {
             return "building scalable digital commerce experiences";
         }
 
-
         if (value.contains("education")
                 || value.contains("edtech")) {
 
             return "building technology solutions that improve learning experiences";
         }
-
 
         if (value.contains("software")
                 || value.contains("technology")
@@ -324,10 +268,8 @@ public class JobDescriptionService {
             return "building scalable software products and technology solutions";
         }
 
-
         return "building high-quality solutions for the industry";
     }
-
 
     // --------------------------------------------------
     // PREFERRED SKILLS
@@ -337,9 +279,7 @@ public class JobDescriptionService {
             List<String> skills,
             String industry) {
 
-        List<String> preferredSkills =
-                new ArrayList<>();
-
+        List<String> preferredSkills = new ArrayList<>();
 
         for (String skill : skills) {
 
@@ -371,25 +311,16 @@ public class JobDescriptionService {
             }
         }
 
-
-        String industryValue =
-                industry.toLowerCase();
-
+        String industryValue = industry.toLowerCase();
 
         if (industryValue.contains("fintech")
                 || industryValue.contains("finance")) {
 
-            preferredSkills.add(
-                    "Data Security"
-            );
+            preferredSkills.add("Data Security");
         }
 
-
-        return removeDuplicates(
-                preferredSkills
-        );
+        return removeDuplicates(preferredSkills);
     }
-
 
     // --------------------------------------------------
     // EXPERIENCE
@@ -398,9 +329,7 @@ public class JobDescriptionService {
     private String generateExperience(
             String experienceLevel) {
 
-        switch (
-                experienceLevel.toLowerCase()
-        ) {
+        switch (experienceLevel.toLowerCase()) {
 
             case "entry":
                 return "0-2 years of relevant experience.";
@@ -416,7 +345,6 @@ public class JobDescriptionService {
         }
     }
 
-
     // --------------------------------------------------
     // BENEFITS
     // --------------------------------------------------
@@ -424,40 +352,25 @@ public class JobDescriptionService {
     private List<String> generateBenefits(
             String companyCulture) {
 
-        List<String> benefits =
-                new ArrayList<>();
+        List<String> benefits = new ArrayList<>();
 
-
-        benefits.add(
-                "Competitive compensation"
-        );
-
+        benefits.add("Competitive compensation");
 
         benefits.add(
                 "Opportunities for professional growth"
         );
 
-
         benefits.add(
                 "Collaborative and supportive work environment"
         );
 
-
-        if (
-                companyCulture.equalsIgnoreCase(
-                        "Remote-first"
-                )
-        ) {
+        if (companyCulture.equalsIgnoreCase("Remote-first")) {
 
             benefits.add(
                     "Flexible remote working opportunities"
             );
 
-        } else if (
-                companyCulture.equalsIgnoreCase(
-                        "Startup"
-                )
-        ) {
+        } else if (companyCulture.equalsIgnoreCase("Startup")) {
 
             benefits.add(
                     "Opportunity to work on impactful products"
@@ -474,10 +387,8 @@ public class JobDescriptionService {
             );
         }
 
-
         return benefits;
     }
-
 
     // --------------------------------------------------
     // COMPANY DESCRIPTION
@@ -495,7 +406,6 @@ public class JobDescriptionService {
                 + "solutions and creating meaningful impact.";
     }
 
-
     // --------------------------------------------------
     // SAVE NEW
     // --------------------------------------------------
@@ -504,9 +414,7 @@ public class JobDescriptionService {
             JobDescriptionRequest request,
             JobDescriptionResponse response) {
 
-        JobDescription jobDescription =
-                new JobDescription();
-
+        JobDescription jobDescription = new JobDescription();
 
         jobDescription.setJobTitle(
                 request.getJobTitle()
@@ -524,7 +432,6 @@ public class JobDescriptionService {
                 response.getAboutTheRole()
         );
 
-
         try {
 
             jobDescription.setResponsibilities(
@@ -533,20 +440,17 @@ public class JobDescriptionService {
                     )
             );
 
-
             jobDescription.setRequiredSkills(
                     objectMapper.writeValueAsString(
                             response.getRequiredSkills()
                     )
             );
 
-
             jobDescription.setPreferredSkills(
                     objectMapper.writeValueAsString(
                             response.getPreferredSkills()
                     )
             );
-
 
             jobDescription.setWhatWeOffer(
                     objectMapper.writeValueAsString(
@@ -562,32 +466,26 @@ public class JobDescriptionService {
             );
         }
 
-
         jobDescription.setExperience(
                 response.getExperience()
         );
-
 
         jobDescription.setCompanyDescription(
                 response.getCompanyDescription()
         );
 
-
         jobDescription.setCompanyCulture(
                 request.getCompanyCulture()
         );
-
 
         jobDescription.setSpecialRequirements(
                 request.getSpecialRequirements()
         );
 
-
         return jobDescriptionRepository.save(
                 jobDescription
         );
     }
-
 
     // --------------------------------------------------
     // SAVE / UPDATE EDITED
@@ -601,7 +499,6 @@ public class JobDescriptionService {
         );
     }
 
-
     // --------------------------------------------------
     // GET ALL
     // --------------------------------------------------
@@ -610,7 +507,6 @@ public class JobDescriptionService {
 
         return jobDescriptionRepository.findAll();
     }
-
 
     // --------------------------------------------------
     // GET BY ID
@@ -629,6 +525,22 @@ public class JobDescriptionService {
                 );
     }
 
+    // --------------------------------------------------
+    // DELETE
+    // --------------------------------------------------
+
+    public void deleteJobDescription(Long id) {
+
+        if (!jobDescriptionRepository.existsById(id)) {
+
+            throw new RuntimeException(
+                    "Job description not found with id: "
+                            + id
+            );
+        }
+
+        jobDescriptionRepository.deleteById(id);
+    }
 
     // --------------------------------------------------
     // REMOVE DUPLICATES
@@ -637,9 +549,7 @@ public class JobDescriptionService {
     private List<String> removeDuplicates(
             List<String> values) {
 
-        List<String> result =
-                new ArrayList<>();
-
+        List<String> result = new ArrayList<>();
 
         for (String value : values) {
 
@@ -647,23 +557,17 @@ public class JobDescriptionService {
 
             for (String existing : result) {
 
-                if (
-                        existing.equalsIgnoreCase(
-                                value
-                        )
-                ) {
+                if (existing.equalsIgnoreCase(value)) {
 
                     exists = true;
                     break;
                 }
             }
 
-
             if (!exists) {
                 result.add(value);
             }
         }
-
 
         return result;
     }
