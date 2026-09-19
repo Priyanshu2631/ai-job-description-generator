@@ -3,11 +3,14 @@ package com.wevolve.jobdescription.service;
 import com.wevolve.jobdescription.dto.JobDescriptionRequest;
 import com.wevolve.jobdescription.dto.JobDescriptionResponse;
 import com.wevolve.jobdescription.model.JobDescription;
+import com.wevolve.jobdescription.model.JobDescriptionVersion;
 import com.wevolve.jobdescription.repository.JobDescriptionRepository;
+import com.wevolve.jobdescription.repository.JobDescriptionVersionRepository;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,15 +18,24 @@ import java.util.List;
 public class JobDescriptionService {
 
     private final JobDescriptionRepository jobDescriptionRepository;
+    private final JobDescriptionVersionRepository versionRepository;
     private final ObjectMapper objectMapper;
 
     public JobDescriptionService(
             JobDescriptionRepository jobDescriptionRepository,
+            JobDescriptionVersionRepository versionRepository,
             ObjectMapper objectMapper) {
 
-        this.jobDescriptionRepository = jobDescriptionRepository;
-        this.objectMapper = objectMapper;
+        this.jobDescriptionRepository =
+                jobDescriptionRepository;
+
+        this.versionRepository =
+                versionRepository;
+
+        this.objectMapper =
+                objectMapper;
     }
+
 
     // --------------------------------------------------
     // GENERATE JOB DESCRIPTION
@@ -32,42 +44,56 @@ public class JobDescriptionService {
     public JobDescriptionResponse generateJobDescription(
             JobDescriptionRequest request) {
 
-        String jobTitle = request.getJobTitle();
-        String industry = request.getIndustry();
-        String experienceLevel = request.getExperienceLevel();
-        List<String> skills = request.getSkills();
+        String jobTitle =
+                request.getJobTitle();
 
-        String aboutTheRole = generateAboutRole(
-                jobTitle,
-                industry,
-                experienceLevel
-        );
+        String industry =
+                request.getIndustry();
 
-        List<String> responsibilities = generateResponsibilities(
-                jobTitle,
-                industry,
-                skills
-        );
+        String experienceLevel =
+                request.getExperienceLevel();
 
-        List<String> requiredSkills = new ArrayList<>(skills);
+        List<String> skills =
+                request.getSkills();
 
-        List<String> preferredSkills = generatePreferredSkills(
-                skills,
-                industry
-        );
+        String aboutTheRole =
+                generateAboutRole(
+                        jobTitle,
+                        industry,
+                        experienceLevel
+                );
 
-        String experience = generateExperience(
-                experienceLevel
-        );
+        List<String> responsibilities =
+                generateResponsibilities(
+                        jobTitle,
+                        industry,
+                        skills
+                );
 
-        List<String> benefits = generateBenefits(
-                request.getCompanyCulture()
-        );
+        List<String> requiredSkills =
+                new ArrayList<>(skills);
 
-        String companyDescription = generateCompanyDescription(
-                industry,
-                request.getCompanyCulture()
-        );
+        List<String> preferredSkills =
+                generatePreferredSkills(
+                        skills,
+                        industry
+                );
+
+        String experience =
+                generateExperience(
+                        experienceLevel
+                );
+
+        List<String> benefits =
+                generateBenefits(
+                        request.getCompanyCulture()
+                );
+
+        String companyDescription =
+                generateCompanyDescription(
+                        industry,
+                        request.getCompanyCulture()
+                );
 
         return new JobDescriptionResponse(
                 jobTitle,
@@ -80,6 +106,7 @@ public class JobDescriptionService {
                 companyDescription
         );
     }
+
 
     // --------------------------------------------------
     // ABOUT ROLE
@@ -110,7 +137,8 @@ public class JobDescriptionService {
                 levelText = experienceLevel;
         }
 
-        String industryFocus = getIndustryFocus(industry);
+        String industryFocus =
+                getIndustryFocus(industry);
 
         return "We are looking for a "
                 + levelText
@@ -125,6 +153,7 @@ public class JobDescriptionService {
                 + "and contribute to meaningful business outcomes.";
     }
 
+
     // --------------------------------------------------
     // RESPONSIBILITIES
     // --------------------------------------------------
@@ -134,7 +163,8 @@ public class JobDescriptionService {
             String industry,
             List<String> skills) {
 
-        List<String> responsibilities = new ArrayList<>();
+        List<String> responsibilities =
+                new ArrayList<>();
 
         responsibilities.add(
                 "Design, develop and maintain high-quality "
@@ -174,6 +204,7 @@ public class JobDescriptionService {
         return responsibilities;
     }
 
+
     // --------------------------------------------------
     // INDUSTRY RESPONSIBILITY
     // --------------------------------------------------
@@ -181,7 +212,8 @@ public class JobDescriptionService {
     private String getIndustryResponsibility(
             String industry) {
 
-        String value = industry.toLowerCase();
+        String value =
+                industry.toLowerCase();
 
         if (value.contains("fintech")
                 || value.contains("finance")
@@ -227,6 +259,7 @@ public class JobDescriptionService {
                 + "business objectives and user needs.";
     }
 
+
     // --------------------------------------------------
     // INDUSTRY FOCUS
     // --------------------------------------------------
@@ -234,7 +267,8 @@ public class JobDescriptionService {
     private String getIndustryFocus(
             String industry) {
 
-        String value = industry.toLowerCase();
+        String value =
+                industry.toLowerCase();
 
         if (value.contains("fintech")
                 || value.contains("finance")
@@ -271,6 +305,7 @@ public class JobDescriptionService {
         return "building high-quality solutions for the industry";
     }
 
+
     // --------------------------------------------------
     // PREFERRED SKILLS
     // --------------------------------------------------
@@ -279,7 +314,8 @@ public class JobDescriptionService {
             List<String> skills,
             String industry) {
 
-        List<String> preferredSkills = new ArrayList<>();
+        List<String> preferredSkills =
+                new ArrayList<>();
 
         for (String skill : skills) {
 
@@ -311,7 +347,8 @@ public class JobDescriptionService {
             }
         }
 
-        String industryValue = industry.toLowerCase();
+        String industryValue =
+                industry.toLowerCase();
 
         if (industryValue.contains("fintech")
                 || industryValue.contains("finance")) {
@@ -319,8 +356,11 @@ public class JobDescriptionService {
             preferredSkills.add("Data Security");
         }
 
-        return removeDuplicates(preferredSkills);
+        return removeDuplicates(
+                preferredSkills
+        );
     }
+
 
     // --------------------------------------------------
     // EXPERIENCE
@@ -345,6 +385,7 @@ public class JobDescriptionService {
         }
     }
 
+
     // --------------------------------------------------
     // BENEFITS
     // --------------------------------------------------
@@ -352,9 +393,12 @@ public class JobDescriptionService {
     private List<String> generateBenefits(
             String companyCulture) {
 
-        List<String> benefits = new ArrayList<>();
+        List<String> benefits =
+                new ArrayList<>();
 
-        benefits.add("Competitive compensation");
+        benefits.add(
+                "Competitive compensation"
+        );
 
         benefits.add(
                 "Opportunities for professional growth"
@@ -364,13 +408,15 @@ public class JobDescriptionService {
                 "Collaborative and supportive work environment"
         );
 
-        if (companyCulture.equalsIgnoreCase("Remote-first")) {
+        if (companyCulture.equalsIgnoreCase(
+                "Remote-first")) {
 
             benefits.add(
                     "Flexible remote working opportunities"
             );
 
-        } else if (companyCulture.equalsIgnoreCase("Startup")) {
+        } else if (companyCulture.equalsIgnoreCase(
+                "Startup")) {
 
             benefits.add(
                     "Opportunity to work on impactful products"
@@ -390,6 +436,7 @@ public class JobDescriptionService {
         return benefits;
     }
 
+
     // --------------------------------------------------
     // COMPANY DESCRIPTION
     // --------------------------------------------------
@@ -406,6 +453,7 @@ public class JobDescriptionService {
                 + "solutions and creating meaningful impact.";
     }
 
+
     // --------------------------------------------------
     // SAVE NEW
     // --------------------------------------------------
@@ -414,7 +462,8 @@ public class JobDescriptionService {
             JobDescriptionRequest request,
             JobDescriptionResponse response) {
 
-        JobDescription jobDescription = new JobDescription();
+        JobDescription jobDescription =
+                new JobDescription();
 
         jobDescription.setJobTitle(
                 request.getJobTitle()
@@ -482,10 +531,19 @@ public class JobDescriptionService {
                 request.getSpecialRequirements()
         );
 
-        return jobDescriptionRepository.save(
-                jobDescription
+        JobDescription saved =
+                jobDescriptionRepository.save(
+                        jobDescription
+                );
+
+        createVersion(
+                saved,
+                "Created"
         );
+
+        return saved;
     }
+
 
     // --------------------------------------------------
     // SAVE / UPDATE EDITED
@@ -494,19 +552,49 @@ public class JobDescriptionService {
     public JobDescription saveEditedJobDescription(
             JobDescription jobDescription) {
 
-        return jobDescriptionRepository.save(
-                jobDescription
+        if (jobDescription.getId() == null) {
+
+            JobDescription saved =
+                    jobDescriptionRepository.save(
+                            jobDescription
+                    );
+
+            createVersion(
+                    saved,
+                    "Created"
+            );
+
+            return saved;
+        }
+
+        getJobDescriptionById(
+                jobDescription.getId()
         );
+
+        JobDescription saved =
+                jobDescriptionRepository.save(
+                        jobDescription
+                );
+
+        createVersion(
+                saved,
+                "Edited"
+        );
+
+        return saved;
     }
+
 
     // --------------------------------------------------
     // GET ALL
     // --------------------------------------------------
 
-    public List<JobDescription> getAllJobDescriptions() {
+    public List<JobDescription>
+    getAllJobDescriptions() {
 
         return jobDescriptionRepository.findAll();
     }
+
 
     // --------------------------------------------------
     // GET BY ID
@@ -525,11 +613,13 @@ public class JobDescriptionService {
                 );
     }
 
+
     // --------------------------------------------------
     // DELETE
     // --------------------------------------------------
 
-    public void deleteJobDescription(Long id) {
+    public void deleteJobDescription(
+            Long id) {
 
         if (!jobDescriptionRepository.existsById(id)) {
 
@@ -539,8 +629,304 @@ public class JobDescriptionService {
             );
         }
 
-        jobDescriptionRepository.deleteById(id);
+        versionRepository
+                .deleteByJobDescriptionId(id);
+
+        jobDescriptionRepository
+                .deleteById(id);
     }
+
+
+    // --------------------------------------------------
+    // DUPLICATE JOB DESCRIPTION
+    // --------------------------------------------------
+
+    public JobDescription duplicateJobDescription(
+            Long id) {
+
+        JobDescription original =
+                getJobDescriptionById(id);
+
+        JobDescription duplicate =
+                new JobDescription();
+
+        duplicate.setJobTitle(
+                original.getJobTitle()
+        );
+
+        duplicate.setIndustry(
+                original.getIndustry()
+        );
+
+        duplicate.setExperienceLevel(
+                original.getExperienceLevel()
+        );
+
+        duplicate.setAboutTheRole(
+                original.getAboutTheRole()
+        );
+
+        duplicate.setResponsibilities(
+                original.getResponsibilities()
+        );
+
+        duplicate.setRequiredSkills(
+                original.getRequiredSkills()
+        );
+
+        duplicate.setPreferredSkills(
+                original.getPreferredSkills()
+        );
+
+        duplicate.setExperience(
+                original.getExperience()
+        );
+
+        duplicate.setWhatWeOffer(
+                original.getWhatWeOffer()
+        );
+
+        duplicate.setCompanyDescription(
+                original.getCompanyDescription()
+        );
+
+        duplicate.setCompanyCulture(
+                original.getCompanyCulture()
+        );
+
+        duplicate.setSpecialRequirements(
+                original.getSpecialRequirements()
+        );
+
+        JobDescription saved =
+                jobDescriptionRepository.save(
+                        duplicate
+                );
+
+        createVersion(
+                saved,
+                "Duplicated"
+        );
+
+        return saved;
+    }
+
+
+    // --------------------------------------------------
+    // VERSION HISTORY
+    // --------------------------------------------------
+
+    public List<JobDescriptionVersion>
+    getVersions(
+            Long jobDescriptionId) {
+
+        getJobDescriptionById(
+                jobDescriptionId
+        );
+
+        return versionRepository
+                .findByJobDescriptionIdOrderByVersionNumberDesc(
+                        jobDescriptionId
+                );
+    }
+
+
+    // --------------------------------------------------
+    // GET SINGLE VERSION
+    // --------------------------------------------------
+
+    public JobDescriptionVersion
+    getVersion(
+            Long jobDescriptionId,
+            Long versionId) {
+
+        return versionRepository
+                .findByIdAndJobDescriptionId(
+                        versionId,
+                        jobDescriptionId
+                )
+                .orElseThrow(
+                        () -> new RuntimeException(
+                                "Version not found with id: "
+                                        + versionId
+                        )
+                );
+    }
+
+
+    // --------------------------------------------------
+    // RESTORE VERSION
+    // --------------------------------------------------
+
+    public JobDescription restoreVersion(
+            Long jobDescriptionId,
+            Long versionId) {
+
+        JobDescription current =
+                getJobDescriptionById(
+                        jobDescriptionId
+                );
+
+        JobDescriptionVersion version =
+                getVersion(
+                        jobDescriptionId,
+                        versionId
+                );
+
+        current.setJobTitle(
+                version.getJobTitle()
+        );
+
+        current.setIndustry(
+                version.getIndustry()
+        );
+
+        current.setExperienceLevel(
+                version.getExperienceLevel()
+        );
+
+        current.setAboutTheRole(
+                version.getAboutTheRole()
+        );
+
+        current.setResponsibilities(
+                version.getResponsibilities()
+        );
+
+        current.setRequiredSkills(
+                version.getRequiredSkills()
+        );
+
+        current.setPreferredSkills(
+                version.getPreferredSkills()
+        );
+
+        current.setExperience(
+                version.getExperience()
+        );
+
+        current.setWhatWeOffer(
+                version.getWhatWeOffer()
+        );
+
+        current.setCompanyDescription(
+                version.getCompanyDescription()
+        );
+
+        current.setCompanyCulture(
+                version.getCompanyCulture()
+        );
+
+        current.setSpecialRequirements(
+                version.getSpecialRequirements()
+        );
+
+        JobDescription restored =
+                jobDescriptionRepository.save(
+                        current
+                );
+
+        createVersion(
+                restored,
+                "Restored from Version "
+                        + version.getVersionNumber()
+        );
+
+        return restored;
+    }
+
+
+    // --------------------------------------------------
+    // CREATE VERSION SNAPSHOT
+    // --------------------------------------------------
+
+    private void createVersion(
+            JobDescription jobDescription,
+            String changeType) {
+
+        Integer nextVersion =
+                versionRepository
+                        .findTopByJobDescriptionIdOrderByVersionNumberDesc(
+                                jobDescription.getId()
+                        )
+                        .map(
+                                version ->
+                                        version.getVersionNumber() + 1
+                        )
+                        .orElse(1);
+
+        JobDescriptionVersion version =
+                new JobDescriptionVersion();
+
+        version.setJobDescriptionId(
+                jobDescription.getId()
+        );
+
+        version.setVersionNumber(
+                nextVersion
+        );
+
+        version.setChangeType(
+                changeType
+        );
+
+        version.setCreatedAt(
+                LocalDateTime.now()
+        );
+
+        version.setJobTitle(
+                jobDescription.getJobTitle()
+        );
+
+        version.setIndustry(
+                jobDescription.getIndustry()
+        );
+
+        version.setExperienceLevel(
+                jobDescription.getExperienceLevel()
+        );
+
+        version.setAboutTheRole(
+                jobDescription.getAboutTheRole()
+        );
+
+        version.setResponsibilities(
+                jobDescription.getResponsibilities()
+        );
+
+        version.setRequiredSkills(
+                jobDescription.getRequiredSkills()
+        );
+
+        version.setPreferredSkills(
+                jobDescription.getPreferredSkills()
+        );
+
+        version.setExperience(
+                jobDescription.getExperience()
+        );
+
+        version.setWhatWeOffer(
+                jobDescription.getWhatWeOffer()
+        );
+
+        version.setCompanyDescription(
+                jobDescription.getCompanyDescription()
+        );
+
+        version.setCompanyCulture(
+                jobDescription.getCompanyCulture()
+        );
+
+        version.setSpecialRequirements(
+                jobDescription.getSpecialRequirements()
+        );
+
+        versionRepository.save(
+                version
+        );
+    }
+
 
     // --------------------------------------------------
     // REMOVE DUPLICATES
@@ -549,7 +935,8 @@ public class JobDescriptionService {
     private List<String> removeDuplicates(
             List<String> values) {
 
-        List<String> result = new ArrayList<>();
+        List<String> result =
+                new ArrayList<>();
 
         for (String value : values) {
 
@@ -557,7 +944,8 @@ public class JobDescriptionService {
 
             for (String existing : result) {
 
-                if (existing.equalsIgnoreCase(value)) {
+                if (existing.equalsIgnoreCase(
+                        value)) {
 
                     exists = true;
                     break;

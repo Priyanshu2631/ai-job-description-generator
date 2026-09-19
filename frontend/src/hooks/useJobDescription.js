@@ -125,6 +125,83 @@ function prepareJobDescription(data) {
   };
 }
 
+
+// --------------------------------------------------
+// ATS HELPERS
+// --------------------------------------------------
+
+function normalizeKeyword(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s+#.-]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function tokenize(value) {
+  return normalizeKeyword(value)
+    .match(/[a-z0-9+#.-]+/g) ?? [];
+}
+
+function uniqueKeywords(items) {
+  return [
+    ...new Set(
+      items
+        .map(normalizeKeyword)
+        .filter(Boolean)
+    ),
+  ];
+}
+
+/*
+ * Checks a keyword as a complete word / phrase.
+ *
+ * This prevents cases such as:
+ * "Java" matching "JavaScript"
+ */
+function keywordExists(text, keyword) {
+  const textTokens = tokenize(text);
+  const keywordTokens = tokenize(keyword);
+
+  if (
+    textTokens.length === 0 ||
+    keywordTokens.length === 0
+  ) {
+    return false;
+  }
+
+  for (
+    let i = 0;
+    i <=
+    textTokens.length -
+      keywordTokens.length;
+    i++
+  ) {
+    let matches = true;
+
+    for (
+      let j = 0;
+      j < keywordTokens.length;
+      j++
+    ) {
+      if (
+        textTokens[i + j] !==
+        keywordTokens[j]
+      ) {
+        matches = false;
+        break;
+      }
+    }
+
+    if (matches) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
 // --------------------------------------------------
 // HOOK
 // --------------------------------------------------
@@ -148,6 +225,7 @@ export default function useJobDescription() {
   const [step, setStep] =
     useState(1);
 
+
   // --------------------------------------------------
   // JOB DESCRIPTION STATE
   // --------------------------------------------------
@@ -156,6 +234,7 @@ export default function useJobDescription() {
     jobDescription,
     setJobDescription,
   ] = useState(null);
+
 
   // --------------------------------------------------
   // DRAFT STATE
@@ -175,6 +254,7 @@ export default function useJobDescription() {
     draftIndustry,
     setDraftIndustry,
   ] = useState("All");
+
 
   // --------------------------------------------------
   // LOADING / ACTION STATE
@@ -202,6 +282,12 @@ export default function useJobDescription() {
   const [saved, setSaved] =
     useState(false);
 
+  const [
+    duplicating,
+    setDuplicating,
+  ] = useState(false);
+
+
   // --------------------------------------------------
   // AI ANALYSIS
   // --------------------------------------------------
@@ -213,6 +299,7 @@ export default function useJobDescription() {
     analyzing,
     setAnalyzing,
   ] = useState(false);
+
 
   // --------------------------------------------------
   // AI OPTIMIZATION
@@ -228,6 +315,7 @@ export default function useJobDescription() {
     setOptimization,
   ] = useState(null);
 
+
   // --------------------------------------------------
   // VARIATIONS
   // --------------------------------------------------
@@ -241,6 +329,7 @@ export default function useJobDescription() {
     selectedVariation,
     setSelectedVariation,
   ] = useState(null);
+
 
   // --------------------------------------------------
   // FORM CHANGE
@@ -259,6 +348,7 @@ export default function useJobDescription() {
 
     setSaved(false);
   };
+
 
   // --------------------------------------------------
   // GENERATE
@@ -428,6 +518,7 @@ export default function useJobDescription() {
       }
     };
 
+
   // --------------------------------------------------
   // SELECT VARIATION
   // --------------------------------------------------
@@ -470,6 +561,7 @@ export default function useJobDescription() {
       setOptimization(null);
     };
 
+
   // --------------------------------------------------
   // UPDATE JD
   // --------------------------------------------------
@@ -488,6 +580,7 @@ export default function useJobDescription() {
     setAnalysis(null);
     setOptimization(null);
   };
+
 
   const updateListItem = (
     field,
@@ -513,6 +606,7 @@ export default function useJobDescription() {
     );
   };
 
+
   const addListItem = (
     field,
     value
@@ -533,6 +627,7 @@ export default function useJobDescription() {
       ]
     );
   };
+
 
   const removeListItem = (
     field,
@@ -557,6 +652,7 @@ export default function useJobDescription() {
       updated
     );
   };
+
 
   // --------------------------------------------------
   // LOAD DRAFTS
@@ -618,6 +714,7 @@ export default function useJobDescription() {
         setLoadingDrafts(false);
       }
     };
+
 
   // --------------------------------------------------
   // OPEN EXISTING DRAFT
@@ -693,6 +790,7 @@ export default function useJobDescription() {
       );
     }
   };
+
 
   // --------------------------------------------------
   // SAVE
@@ -828,6 +926,7 @@ export default function useJobDescription() {
       }
     };
 
+
   // --------------------------------------------------
   // DELETE DRAFT
   // --------------------------------------------------
@@ -892,6 +991,124 @@ export default function useJobDescription() {
         );
       }
     };
+
+
+  // --------------------------------------------------
+  // DUPLICATE DRAFT
+  // --------------------------------------------------
+
+  const handleDuplicateDraft =
+    async (id) => {
+
+      if (!id) {
+        return;
+      }
+
+      const confirmed =
+        window.confirm(
+          "Create a duplicate of this job description?"
+        );
+
+      if (!confirmed) {
+        return;
+      }
+
+      setDuplicating(true);
+
+      try {
+
+        console.log(
+          "Duplicating JD:",
+          id
+        );
+
+        const response =
+          await axios.post(
+            `${API_URL}/${id}/duplicate`
+          );
+
+        console.log(
+          "Duplicate response:",
+          response.data
+        );
+
+        const duplicated =
+          prepareJobDescription(
+            response.data
+          );
+
+        setJobDescription(
+          duplicated
+        );
+
+        setFormData({
+          jobTitle:
+            duplicated.jobTitle,
+
+          industry:
+            duplicated.industry,
+
+          experienceLevel:
+            duplicated.experienceLevel,
+
+          skills:
+            duplicated.requiredSkills.join(
+              ", "
+            ),
+
+          companyCulture:
+            duplicated.companyCulture,
+
+          specialRequirements:
+            duplicated.specialRequirements,
+        });
+
+        setStep(4);
+
+        setSaved(false);
+        setAnalysis(null);
+        setOptimization(null);
+
+        await loadDrafts();
+
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+
+      } catch (error) {
+
+        console.error(
+          "Duplicate error:",
+          error
+        );
+
+        console.error(
+          "Duplicate status:",
+          error.response?.status
+        );
+
+        console.error(
+          "Duplicate response:",
+          error.response?.data
+        );
+
+        const serverMessage =
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.response?.data ||
+          error.message;
+
+        alert(
+          `Could not duplicate the job description.\n\n${serverMessage}`
+        );
+
+      } finally {
+
+        setDuplicating(false);
+      }
+    };
+
 
   // --------------------------------------------------
   // REGENERATE
@@ -993,6 +1210,7 @@ export default function useJobDescription() {
       }
     };
 
+
   // --------------------------------------------------
   // AI ANALYSIS
   // --------------------------------------------------
@@ -1048,6 +1266,7 @@ export default function useJobDescription() {
         setAnalyzing(false);
       }
     };
+
 
   // --------------------------------------------------
   // AI OPTIMIZATION
@@ -1122,6 +1341,7 @@ export default function useJobDescription() {
       }
     };
 
+
   // --------------------------------------------------
   // APPLY AI OPTIMIZATION
   // --------------------------------------------------
@@ -1184,6 +1404,7 @@ export default function useJobDescription() {
       setAnalysis(null);
       setSaved(false);
     };
+
 
   // --------------------------------------------------
   // COPY
@@ -1286,6 +1507,7 @@ ${jobDescription.specialRequirements || "None"}
       }
     };
 
+
   // --------------------------------------------------
   // PDF
   // --------------------------------------------------
@@ -1386,6 +1608,7 @@ ${jobDescription.specialRequirements || "None"}
           lines.length * 7 +
           5;
       };
+
 
       addText(
         jobDescription.jobTitle,
@@ -1507,21 +1730,42 @@ ${jobDescription.specialRequirements || "None"}
       );
     };
 
+
   // --------------------------------------------------
-  // ATS
+  // ATS ANALYSIS
   // --------------------------------------------------
 
   const calculateATS =
     () => {
 
       if (!jobDescription) {
-
         return {
           score: 0,
+
+          requiredCoverage: 0,
+          preferredCoverage: 0,
+          roleCoverage: 0,
+
           matched: [],
           missing: [],
+
+          requiredMatched: [],
+          requiredMissing: [],
+
+          preferredMatched: [],
+          preferredMissing: [],
+
+          roleMatched: [],
+          roleMissing: [],
+
+          suggestions: [],
         };
       }
+
+
+      // --------------------------------------------------
+      // SAFE VALUES
+      // --------------------------------------------------
 
       const responsibilities =
         Array.isArray(
@@ -1544,68 +1788,294 @@ ${jobDescription.specialRequirements || "None"}
           ? jobDescription.preferredSkills
           : [];
 
-      const text = `
+
+      // --------------------------------------------------
+      // SEARCHABLE CONTENT
+      //
+      // IMPORTANT:
+      // Skill lists are intentionally excluded.
+      // Otherwise the ATS would always find every
+      // required/preferred skill.
+      // --------------------------------------------------
+
+      const searchableText = `
         ${jobDescription.jobTitle || ""}
         ${jobDescription.aboutTheRole || ""}
         ${responsibilities.join(" ")}
-        ${requiredSkills.join(" ")}
-        ${preferredSkills.join(" ")}
         ${jobDescription.experience || ""}
+        ${jobDescription.whatWeOffer?.join?.(" ") || ""}
         ${jobDescription.companyDescription || ""}
-      `.toLowerCase();
+        ${jobDescription.companyCulture || ""}
+        ${jobDescription.specialRequirements || ""}
+      `;
 
-      const keywords = [
-        ...requiredSkills,
-        ...preferredSkills,
-        jobDescription.industry,
-        jobDescription.experienceLevel,
-      ];
 
-      const uniqueKeywords =
-        [
-          ...new Set(
-            keywords
-              .filter(Boolean)
-              .map(
-                (x) =>
-                  String(
-                    x
-                  ).toLowerCase()
-              )
-          ),
-        ];
+      // --------------------------------------------------
+      // REQUIRED SKILLS
+      // --------------------------------------------------
 
-      const matched =
-        uniqueKeywords.filter(
-          (keyword) =>
-            text.includes(keyword)
+      const uniqueRequired =
+        uniqueKeywords(
+          requiredSkills
         );
 
-      const missing =
-        uniqueKeywords.filter(
+      const requiredMatched =
+        uniqueRequired.filter(
           (keyword) =>
-            !text.includes(keyword)
+            keywordExists(
+              searchableText,
+              keyword
+            )
         );
+
+      const requiredMissing =
+        uniqueRequired.filter(
+          (keyword) =>
+            !keywordExists(
+              searchableText,
+              keyword
+            )
+        );
+
+      const requiredCoverage =
+        uniqueRequired.length === 0
+          ? 100
+          : Math.round(
+              (
+                requiredMatched.length /
+                uniqueRequired.length
+              ) *
+              100
+            );
+
+
+      // --------------------------------------------------
+      // PREFERRED SKILLS
+      // --------------------------------------------------
+
+      const uniquePreferred =
+        uniqueKeywords(
+          preferredSkills
+        );
+
+      const preferredMatched =
+        uniquePreferred.filter(
+          (keyword) =>
+            keywordExists(
+              searchableText,
+              keyword
+            )
+        );
+
+      const preferredMissing =
+        uniquePreferred.filter(
+          (keyword) =>
+            !keywordExists(
+              searchableText,
+              keyword
+            )
+        );
+
+      const preferredCoverage =
+        uniquePreferred.length === 0
+          ? 100
+          : Math.round(
+              (
+                preferredMatched.length /
+                uniquePreferred.length
+              ) *
+              100
+            );
+
+
+      // --------------------------------------------------
+      // ROLE KEYWORDS
+      // --------------------------------------------------
+
+      const roleKeywords =
+        uniqueKeywords([
+          jobDescription.industry,
+          jobDescription.experienceLevel,
+          jobDescription.jobTitle,
+        ]);
+
+      const roleMatched =
+        roleKeywords.filter(
+          (keyword) =>
+            keywordExists(
+              searchableText,
+              keyword
+            )
+        );
+
+      const roleMissing =
+        roleKeywords.filter(
+          (keyword) =>
+            !keywordExists(
+              searchableText,
+              keyword
+            )
+        );
+
+      const roleCoverage =
+        roleKeywords.length === 0
+          ? 100
+          : Math.round(
+              (
+                roleMatched.length /
+                roleKeywords.length
+              ) *
+              100
+            );
+
+
+      // --------------------------------------------------
+      // OVERALL SCORE
+      //
+      // Required skills carry the most weight.
+      // --------------------------------------------------
 
       const score =
-        uniqueKeywords.length ===
-        0
-          ? 0
-          : Math.round(
-              (matched.length /
-                uniqueKeywords.length) *
-                100
-            );
+        Math.round(
+          requiredCoverage * 0.6 +
+          preferredCoverage * 0.2 +
+          roleCoverage * 0.2
+        );
+
+
+      // --------------------------------------------------
+      // MATCHED / MISSING
+      // --------------------------------------------------
+
+      const matched =
+        uniqueKeywords([
+          ...requiredMatched,
+          ...preferredMatched,
+          ...roleMatched,
+        ]);
+
+      const missing =
+        uniqueKeywords([
+          ...requiredMissing,
+          ...preferredMissing,
+          ...roleMissing,
+        ]);
+
+
+      // --------------------------------------------------
+      // SUGGESTIONS
+      // --------------------------------------------------
+
+      const suggestions = [];
+
+      if (
+        requiredMissing.length > 0
+      ) {
+        suggestions.push(
+          `Add relevant required skills such as ${requiredMissing
+            .slice(0, 3)
+            .join(", ")} naturally within the responsibilities or role description.`
+        );
+      }
+
+      if (
+        preferredMissing.length > 0
+      ) {
+        suggestions.push(
+          `Consider mentioning preferred skills such as ${preferredMissing
+            .slice(0, 3)
+            .join(", ")} where they genuinely apply to the role.`
+        );
+      }
+
+      if (
+        roleMissing.length > 0
+      ) {
+        suggestions.push(
+          `Make the role context clearer by naturally mentioning ${roleMissing
+            .slice(0, 3)
+            .join(", ")} in the job description.`
+        );
+      }
+
+      if (
+        responsibilities.length < 3
+      ) {
+        suggestions.push(
+          "Add more specific responsibilities to improve role clarity and keyword coverage."
+        );
+      }
+
+      if (
+        !jobDescription.aboutTheRole ||
+        jobDescription.aboutTheRole.trim()
+          .length < 80
+      ) {
+        suggestions.push(
+          "Expand the About the Role section to clearly explain the purpose and scope of the position."
+        );
+      }
+
+      if (
+        !jobDescription.experience ||
+        jobDescription.experience.trim()
+          .length < 20
+      ) {
+        suggestions.push(
+          "Provide clearer experience requirements for better candidate targeting."
+        );
+      }
+
+      if (
+        !jobDescription.companyDescription ||
+        jobDescription.companyDescription.trim()
+          .length < 30
+      ) {
+        suggestions.push(
+          "Add a concise company description to provide context for candidates."
+        );
+      }
+
+      if (
+        suggestions.length === 0
+      ) {
+        suggestions.push(
+          "The job description has strong keyword coverage and a well-structured content base."
+        );
+      }
+
+
+      // --------------------------------------------------
+      // RESULT
+      // --------------------------------------------------
 
       return {
         score,
+
+        requiredCoverage,
+        preferredCoverage,
+        roleCoverage,
+
         matched,
         missing,
+
+        requiredMatched,
+        requiredMissing,
+
+        preferredMatched,
+        preferredMissing,
+
+        roleMatched,
+        roleMissing,
+
+        suggestions,
       };
     };
 
+
   const ats =
     calculateATS();
+
 
   // --------------------------------------------------
   // STEP NAVIGATION
@@ -1628,6 +2098,7 @@ ${jobDescription.specialRequirements || "None"}
       }
     }
 
+
     if (step === 2) {
 
       if (
@@ -1642,6 +2113,7 @@ ${jobDescription.specialRequirements || "None"}
       }
     }
 
+
     setStep(
       Math.min(
         step + 1,
@@ -1649,6 +2121,7 @@ ${jobDescription.specialRequirements || "None"}
       )
     );
   };
+
 
   const previousStep = () => {
 
@@ -1659,6 +2132,7 @@ ${jobDescription.specialRequirements || "None"}
       )
     );
   };
+
 
   // --------------------------------------------------
   // FILTERED DRAFTS
@@ -1695,8 +2169,10 @@ ${jobDescription.specialRequirements || "None"}
       }
     );
 
+
   const draftIndustries = [
     "All",
+
     ...Array.from(
       new Set(
         drafts
@@ -1708,6 +2184,7 @@ ${jobDescription.specialRequirements || "None"}
       )
     ),
   ];
+
 
   // --------------------------------------------------
   // RETURN
@@ -1734,6 +2211,8 @@ ${jobDescription.specialRequirements || "None"}
     saving,
 
     regenerating,
+
+    duplicating,
 
     copied,
 
@@ -1780,6 +2259,8 @@ ${jobDescription.specialRequirements || "None"}
     handleSave,
 
     handleDeleteDraft,
+
+    handleDuplicateDraft,
 
     loadDrafts,
 
