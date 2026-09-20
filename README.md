@@ -39,20 +39,38 @@ It combines a React frontend, Spring Boot backend, Google Gemini, H2 persistence
 ## Architecture
 
 ```text
-React + Vite
-     │
-     │ REST API
-     ▼
-Spring Boot
-     │
- ┌───┼───────────────┐
- ▼   ▼               ▼
-JD  Gemini AI    Version
-Service Services  Management
- │   │               │
- └───┼───────────────┘
-     ▼
- H2 Database
+                    Employer
+                       │
+                       ▼
+              ┌─────────────────┐
+              │  React Frontend │
+              └────────┬────────┘
+                       │
+                       │ REST API
+                       ▼
+              ┌─────────────────┐
+              │ Spring Boot API │
+              └────────┬────────┘
+                       │
+          ┌────────────┼─────────────┐
+          │            │             │
+          ▼            ▼             ▼
+    ┌──────────┐ ┌───────────┐ ┌────────────┐
+    │ JD       │ │ Gemini AI │ │ Version    │
+    │ Service  │ │ Services  │ │ Management │
+    └────┬─────┘ └─────┬─────┘ └──────┬─────┘
+         │             │              │
+         │             ▼              │
+         │       ┌────────────┐       │
+         │       │  Gemini    │       │
+         │       │    API     │       │
+         │       └────────────┘       │
+         │                            │
+         └────────────┬───────────────┘
+                      ▼
+               ┌─────────────┐
+               │ H2 Database │
+               └─────────────┘
 ```
 
 ## AI Workflow
