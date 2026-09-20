@@ -32,15 +32,13 @@ function parseJsonArray(value) {
         ? JSON.parse(value)
         : value;
 
-    if (Array.isArray(parsed)) {
-      return parsed.filter(
-        (item) =>
-          item !== null &&
-          item !== undefined
-      );
-    }
-
-    return [];
+    return Array.isArray(parsed)
+      ? parsed.filter(
+          (item) =>
+            item !== null &&
+            item !== undefined
+        )
+      : [];
   } catch (error) {
     console.error(
       "Could not parse JD list field:",
@@ -51,6 +49,7 @@ function parseJsonArray(value) {
     return [];
   }
 }
+
 
 function prepareJobDescription(data) {
   if (!data) {
@@ -127,6 +126,47 @@ function prepareJobDescription(data) {
 
 
 // --------------------------------------------------
+// ERROR MESSAGE HELPER
+// --------------------------------------------------
+
+function getServerErrorMessage(
+  error,
+  fallback
+) {
+  const data =
+    error?.response?.data;
+
+  if (
+    data &&
+    typeof data === "object" &&
+    data.message
+  ) {
+    return data.message;
+  }
+
+  if (
+    data &&
+    typeof data === "object" &&
+    data.error
+  ) {
+    return data.error;
+  }
+
+  if (
+    typeof data === "string" &&
+    data.trim()
+  ) {
+    return data;
+  }
+
+  return (
+    error?.message ||
+    fallback
+  );
+}
+
+
+// --------------------------------------------------
 // ATS HELPERS
 // --------------------------------------------------
 
@@ -138,10 +178,15 @@ function normalizeKeyword(value) {
     .replace(/\s+/g, " ");
 }
 
+
 function tokenize(value) {
-  return normalizeKeyword(value)
-    .match(/[a-z0-9+#.-]+/g) ?? [];
+  return (
+    normalizeKeyword(value).match(
+      /[a-z0-9+#.-]+/g
+    ) ?? []
+  );
 }
+
 
 function uniqueKeywords(items) {
   return [
@@ -153,19 +198,20 @@ function uniqueKeywords(items) {
   ];
 }
 
-/*
- * Checks a keyword as a complete word / phrase.
- *
- * This prevents cases such as:
- * "Java" matching "JavaScript"
- */
-function keywordExists(text, keyword) {
-  const textTokens = tokenize(text);
-  const keywordTokens = tokenize(keyword);
+
+function keywordExists(
+  text,
+  keyword
+) {
+  const textTokens =
+    tokenize(text);
+
+  const keywordTokens =
+    tokenize(keyword);
 
   if (
-    textTokens.length === 0 ||
-    keywordTokens.length === 0
+    !textTokens.length ||
+    !keywordTokens.length
   ) {
     return false;
   }
@@ -173,8 +219,8 @@ function keywordExists(text, keyword) {
   for (
     let i = 0;
     i <=
-    textTokens.length -
-      keywordTokens.length;
+      textTokens.length -
+        keywordTokens.length;
     i++
   ) {
     let matches = true;
@@ -351,7 +397,7 @@ export default function useJobDescription() {
 
 
   // --------------------------------------------------
-  // GENERATE
+  // GENERATE WITH AI
   // --------------------------------------------------
 
   const handleGenerate =
@@ -395,9 +441,13 @@ export default function useJobDescription() {
             formData.specialRequirements,
         };
 
+        /*
+         * IMPORTANT:
+         * Use the Gemini-backed endpoint.
+         */
         const response =
           await axios.post(
-            `${API_URL}/generate`,
+            `${API_URL}/generate-ai`,
             requestData
           );
 
@@ -413,7 +463,7 @@ export default function useJobDescription() {
           ...generated,
 
           aboutTheRole:
-            `We are seeking a ${generated.jobTitle} to contribute to ${generated.industry} projects and deliver high-quality solutions.`,
+            generated.aboutTheRole,
 
           responsibilities:
             generated.responsibilities.slice(
@@ -432,17 +482,12 @@ export default function useJobDescription() {
           ...generated,
 
           aboutTheRole:
-            `Join our ${generated.industry} team as a ${generated.jobTitle} and help build scalable solutions that create measurable business and user impact.`,
+            generated.aboutTheRole,
 
           responsibilities:
             generated.responsibilities.map(
               (item) =>
-                item.endsWith(".")
-                  ? item.replace(
-                      ".",
-                      " with measurable impact."
-                    )
-                  : `${item} with measurable impact.`
+                item
             ),
         };
 
@@ -462,7 +507,8 @@ export default function useJobDescription() {
           },
 
           {
-            name: "Impact-focused",
+            name:
+              "Impact-focused",
             description:
               "Emphasizes business impact",
             data: impactFocused,
@@ -494,7 +540,7 @@ export default function useJobDescription() {
       } catch (error) {
 
         console.error(
-          "Generation error:",
+          "AI generation error:",
           error
         );
 
@@ -508,8 +554,14 @@ export default function useJobDescription() {
           error.response?.data
         );
 
+        const serverMessage =
+          getServerErrorMessage(
+            error,
+            "Could not generate the job description."
+          );
+
         alert(
-          "Could not generate the job description."
+          `Could not generate the job description.\n\n${serverMessage}`
         );
 
       } finally {
@@ -598,7 +650,8 @@ export default function useJobDescription() {
     const updated =
       [...currentList];
 
-    updated[index] = value;
+    updated[index] =
+      value;
 
     updateJobDescription(
       field,
@@ -670,11 +723,6 @@ export default function useJobDescription() {
             API_URL
           );
 
-        console.log(
-          "Loaded drafts:",
-          response.data
-        );
-
         const preparedDrafts =
           Array.isArray(
             response.data
@@ -695,18 +743,11 @@ export default function useJobDescription() {
           error
         );
 
-        console.error(
-          "Draft status:",
-          error.response?.status
-        );
-
-        console.error(
-          "Draft response:",
-          error.response?.data
-        );
-
         alert(
-          "Could not load saved drafts."
+          getServerErrorMessage(
+            error,
+            "Could not load saved drafts."
+          )
         );
 
       } finally {
@@ -726,20 +767,10 @@ export default function useJobDescription() {
 
     try {
 
-      console.log(
-        "Opening draft:",
-        draft
-      );
-
       const prepared =
         prepareJobDescription(
           draft
         );
-
-      console.log(
-        "Prepared draft:",
-        prepared
-      );
 
       setJobDescription(
         prepared
@@ -873,21 +904,11 @@ export default function useJobDescription() {
             jobDescription.specialRequirements,
         };
 
-        console.log(
-          "Saving JD:",
-          payload
-        );
-
         const response =
           await axios.post(
             `${API_URL}/save-edited`,
             payload
           );
-
-        console.log(
-          "Save response:",
-          response.data
-        );
 
         setJobDescription(
           prepareJobDescription(
@@ -906,18 +927,11 @@ export default function useJobDescription() {
           error
         );
 
-        console.error(
-          "Save status:",
-          error.response?.status
-        );
-
-        console.error(
-          "Save response:",
-          error.response?.data
-        );
-
         alert(
-          "Could not save the job description."
+          getServerErrorMessage(
+            error,
+            "Could not save the job description."
+          )
         );
 
       } finally {
@@ -976,18 +990,11 @@ export default function useJobDescription() {
           error
         );
 
-        console.error(
-          "Delete status:",
-          error.response?.status
-        );
-
-        console.error(
-          "Delete response:",
-          error.response?.data
-        );
-
         alert(
-          "Could not delete the job description."
+          getServerErrorMessage(
+            error,
+            "Could not delete the job description."
+          )
         );
       }
     };
@@ -1017,20 +1024,10 @@ export default function useJobDescription() {
 
       try {
 
-        console.log(
-          "Duplicating JD:",
-          id
-        );
-
         const response =
           await axios.post(
             `${API_URL}/${id}/duplicate`
           );
-
-        console.log(
-          "Duplicate response:",
-          response.data
-        );
 
         const duplicated =
           prepareJobDescription(
@@ -1083,24 +1080,11 @@ export default function useJobDescription() {
           error
         );
 
-        console.error(
-          "Duplicate status:",
-          error.response?.status
-        );
-
-        console.error(
-          "Duplicate response:",
-          error.response?.data
-        );
-
-        const serverMessage =
-          error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.response?.data ||
-          error.message;
-
         alert(
-          `Could not duplicate the job description.\n\n${serverMessage}`
+          getServerErrorMessage(
+            error,
+            "Could not duplicate the job description."
+          )
         );
 
       } finally {
@@ -1111,7 +1095,7 @@ export default function useJobDescription() {
 
 
   // --------------------------------------------------
-  // REGENERATE
+  // REGENERATE WITH AI
   // --------------------------------------------------
 
   const handleRegenerate =
@@ -1149,9 +1133,13 @@ export default function useJobDescription() {
             jobDescription.specialRequirements,
         };
 
+        /*
+         * IMPORTANT:
+         * Regeneration also uses Gemini.
+         */
         const response =
           await axios.post(
-            `${API_URL}/generate`,
+            `${API_URL}/generate-ai`,
             requestData
           );
 
@@ -1186,7 +1174,7 @@ export default function useJobDescription() {
       } catch (error) {
 
         console.error(
-          "Regeneration error:",
+          "AI regeneration error:",
           error
         );
 
@@ -1200,8 +1188,14 @@ export default function useJobDescription() {
           error.response?.data
         );
 
+        const serverMessage =
+          getServerErrorMessage(
+            error,
+            "Could not regenerate the job description."
+          );
+
         alert(
-          "Could not regenerate."
+          `Could not regenerate the job description.\n\n${serverMessage}`
         );
 
       } finally {
@@ -1257,8 +1251,14 @@ export default function useJobDescription() {
           error.response?.data
         );
 
+        const serverMessage =
+          getServerErrorMessage(
+            error,
+            "Could not analyze the job description."
+          );
+
         alert(
-          "Could not analyze the job description."
+          `Could not analyze the job description.\n\n${serverMessage}`
         );
 
       } finally {
@@ -1289,20 +1289,10 @@ export default function useJobDescription() {
 
       try {
 
-        console.log(
-          "Optimizing JD ID:",
-          jobDescription.id
-        );
-
         const response =
           await axios.post(
             `${API_URL}/${jobDescription.id}/optimize`
           );
-
-        console.log(
-          "Optimization response:",
-          response.data
-        );
 
         setOptimization(
           response.data
@@ -1326,10 +1316,10 @@ export default function useJobDescription() {
         );
 
         const serverMessage =
-          error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.response?.data ||
-          error.message;
+          getServerErrorMessage(
+            error,
+            "Could not optimize the job description."
+          );
 
         alert(
           `Could not optimize the job description.\n\n${serverMessage}`
@@ -1454,19 +1444,16 @@ ${jobDescription.aboutTheRole}
 RESPONSIBILITIES
 ${responsibilities
   .map(
-    (x) => `• ${x}`
+    (item) =>
+      `• ${item}`
   )
   .join("\n")}
 
 REQUIRED SKILLS
-${requiredSkills.join(
-  ", "
-)}
+${requiredSkills.join(", ")}
 
 PREFERRED SKILLS
-${preferredSkills.join(
-  ", "
-)}
+${preferredSkills.join(", ")}
 
 EXPERIENCE
 ${jobDescription.experience}
@@ -1474,7 +1461,8 @@ ${jobDescription.experience}
 WHAT WE OFFER
 ${whatWeOffer
   .map(
-    (x) => `• ${x}`
+    (item) =>
+      `• ${item}`
   )
   .join("\n")}
 
@@ -1609,7 +1597,6 @@ ${jobDescription.specialRequirements || "None"}
           5;
       };
 
-
       addText(
         jobDescription.jobTitle,
         20,
@@ -1732,7 +1719,7 @@ ${jobDescription.specialRequirements || "None"}
 
 
   // --------------------------------------------------
-  // ATS ANALYSIS
+  // ATS
   // --------------------------------------------------
 
   const calculateATS =
@@ -1741,31 +1728,20 @@ ${jobDescription.specialRequirements || "None"}
       if (!jobDescription) {
         return {
           score: 0,
-
           requiredCoverage: 0,
           preferredCoverage: 0,
           roleCoverage: 0,
-
           matched: [],
           missing: [],
-
           requiredMatched: [],
           requiredMissing: [],
-
           preferredMatched: [],
           preferredMissing: [],
-
           roleMatched: [],
           roleMissing: [],
-
           suggestions: [],
         };
       }
-
-
-      // --------------------------------------------------
-      // SAFE VALUES
-      // --------------------------------------------------
 
       const responsibilities =
         Array.isArray(
@@ -1788,27 +1764,23 @@ ${jobDescription.specialRequirements || "None"}
           ? jobDescription.preferredSkills
           : [];
 
-
-      // --------------------------------------------------
-      // SEARCHABLE CONTENT
-      //
-      // IMPORTANT:
-      // Skill lists are intentionally excluded.
-      // Otherwise the ATS would always find every
-      // required/preferred skill.
-      // --------------------------------------------------
-
+      /*
+       * Do not include skill lists themselves
+       * in searchable text.
+       *
+       * Otherwise every skill would automatically
+       * be detected as present.
+       */
       const searchableText = `
         ${jobDescription.jobTitle || ""}
         ${jobDescription.aboutTheRole || ""}
         ${responsibilities.join(" ")}
         ${jobDescription.experience || ""}
-        ${jobDescription.whatWeOffer?.join?.(" ") || ""}
+        ${jobDescription.whatWeOffer?.join(" ") || ""}
         ${jobDescription.companyDescription || ""}
         ${jobDescription.companyCulture || ""}
         ${jobDescription.specialRequirements || ""}
       `;
-
 
       // --------------------------------------------------
       // REQUIRED SKILLS
@@ -1931,8 +1903,6 @@ ${jobDescription.specialRequirements || "None"}
 
       // --------------------------------------------------
       // OVERALL SCORE
-      //
-      // Required skills carry the most weight.
       // --------------------------------------------------
 
       const score =
@@ -1971,36 +1941,40 @@ ${jobDescription.specialRequirements || "None"}
       if (
         requiredMissing.length > 0
       ) {
+
         suggestions.push(
-          `Add relevant required skills such as ${requiredMissing
+          `Consider mentioning ${requiredMissing
             .slice(0, 3)
-            .join(", ")} naturally within the responsibilities or role description.`
+            .join(", ")} naturally in the role description or responsibilities if relevant.`
         );
       }
 
       if (
         preferredMissing.length > 0
       ) {
+
         suggestions.push(
-          `Consider mentioning preferred skills such as ${preferredMissing
+          `Consider adding relevant preferred skills such as ${preferredMissing
             .slice(0, 3)
-            .join(", ")} where they genuinely apply to the role.`
+            .join(", ")} where appropriate.`
         );
       }
 
       if (
         roleMissing.length > 0
       ) {
+
         suggestions.push(
-          `Make the role context clearer by naturally mentioning ${roleMissing
+          `Consider making the role context clearer by naturally mentioning ${roleMissing
             .slice(0, 3)
-            .join(", ")} in the job description.`
+            .join(", ")} where relevant.`
         );
       }
 
       if (
         responsibilities.length < 3
       ) {
+
         suggestions.push(
           "Add more specific responsibilities to improve role clarity and keyword coverage."
         );
@@ -2008,9 +1982,11 @@ ${jobDescription.specialRequirements || "None"}
 
       if (
         !jobDescription.aboutTheRole ||
-        jobDescription.aboutTheRole.trim()
+        jobDescription.aboutTheRole
+          .trim()
           .length < 80
       ) {
+
         suggestions.push(
           "Expand the About the Role section to clearly explain the purpose and scope of the position."
         );
@@ -2018,9 +1994,11 @@ ${jobDescription.specialRequirements || "None"}
 
       if (
         !jobDescription.experience ||
-        jobDescription.experience.trim()
+        jobDescription.experience
+          .trim()
           .length < 20
       ) {
+
         suggestions.push(
           "Provide clearer experience requirements for better candidate targeting."
         );
@@ -2028,9 +2006,11 @@ ${jobDescription.specialRequirements || "None"}
 
       if (
         !jobDescription.companyDescription ||
-        jobDescription.companyDescription.trim()
+        jobDescription.companyDescription
+          .trim()
           .length < 30
       ) {
+
         suggestions.push(
           "Add a concise company description to provide context for candidates."
         );
@@ -2039,33 +2019,35 @@ ${jobDescription.specialRequirements || "None"}
       if (
         suggestions.length === 0
       ) {
+
         suggestions.push(
-          "The job description has strong keyword coverage and a well-structured content base."
+          "The job description has good keyword coverage and structure."
         );
       }
-
-
-      // --------------------------------------------------
-      // RESULT
-      // --------------------------------------------------
 
       return {
         score,
 
         requiredCoverage,
+
         preferredCoverage,
+
         roleCoverage,
 
         matched,
+
         missing,
 
         requiredMatched,
+
         requiredMissing,
 
         preferredMatched,
+
         preferredMissing,
 
         roleMatched,
+
         roleMissing,
 
         suggestions,
@@ -2098,7 +2080,6 @@ ${jobDescription.specialRequirements || "None"}
       }
     }
 
-
     if (step === 2) {
 
       if (
@@ -2112,7 +2093,6 @@ ${jobDescription.specialRequirements || "None"}
         return;
       }
     }
-
 
     setStep(
       Math.min(
