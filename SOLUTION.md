@@ -2,9 +2,9 @@
 
 ## 1. Problem Understanding
 
-The objective is to build a full-stack application that helps employers create structured and professional job descriptions from a small set of hiring inputs.
+JD Studio is a full-stack application that helps employers create structured, professional job descriptions from a small set of hiring inputs.
 
-The employer provides:
+### Employer Inputs
 
 - Job Title
 - Industry
@@ -13,7 +13,7 @@ The employer provides:
 - Company Culture
 - Special Requirements
 
-The system then generates a structured job description containing:
+### Generated Content
 
 - About the Role
 - Responsibilities
@@ -23,211 +23,138 @@ The system then generates a structured job description containing:
 - What We Offer
 - About the Company
 
-The application also supports analysis, optimization, ATS keyword coverage, editing, persistence, version history and export.
+The application also supports AI analysis and optimization, ATS keyword analysis, editing, persistence, version history, duplication and PDF export.
 
 ---
 
 ## 2. Proposed Solution
 
-JD Studio uses a React frontend and Spring Boot backend with Google Gemini as the AI generation, analysis and optimization engine.
+JD Studio uses React, Spring Boot, Spring AI and Google Gemini.
 
 ```text
-                    Employer
-                       │
-                       ▼
-              ┌─────────────────┐
-              │  React Frontend │
-              └────────┬────────┘
-                       │
-                       │ REST API
-                       ▼
-              ┌─────────────────┐
-              │ Spring Boot API │
-              └────────┬────────┘
-                       │
-          ┌────────────┼─────────────┐
-          │            │             │
-          ▼            ▼             ▼
-    ┌──────────┐ ┌───────────┐ ┌────────────┐
-    │ JD       │ │ Gemini AI │ │ Version    │
-    │ Service  │ │ Services  │ │ Management │
-    └────┬─────┘ └─────┬─────┘ └──────┬─────┘
-         │             │              │
-         │             ▼              │
-         │       ┌────────────┐       │
-         │       │  Gemini    │       │
-         │       │    API     │       │
-         │       └────────────┘       │
-         │                            │
-         └────────────┬───────────────┘
-                      ▼
-               ┌─────────────┐
-               │ H2 Database │
-               └─────────────┘
+                         Employer
+                            │
+                            ▼
+                    ┌────────────────┐
+                    │ React Frontend │
+                    └───────┬────────┘
+                            │ REST API
+                            ▼
+                    ┌────────────────┐
+                    │ Spring Boot API│
+                    └───────┬────────┘
+                            │
+             ┌──────────────┼──────────────┐
+             ▼              ▼              ▼
+        ┌─────────┐   ┌───────────┐   ┌──────────┐
+        │ JD      │   │ Gemini AI │   │ Version  │
+        │ Service │   │ Services  │   │Management│
+        └────┬────┘   └─────┬─────┘   └────┬─────┘
+             │              ▼              │
+             │       ┌────────────┐        │
+             │       │ Gemini API │        │
+             │       └────────────┘        │
+             └──────────────┬──────────────┘
+                            ▼
+                     ┌─────────────┐
+                     │ H2 Database │
+                     └─────────────┘
 ```
 
-The frontend is responsible for the user workflow, editing, variations, ATS display and export.
-
-The backend is responsible for validation, REST APIs, business logic, AI integration and persistence.
+The frontend handles the user workflow, editing, variations, ATS display and export. The backend handles validation, REST APIs, business logic, AI integration and persistence.
 
 ---
 
-## 3. AI-Powered Generation
+## 3. AI Generation
 
-The current primary generation workflow uses Google Gemini through Spring AI.
-
-### Input
-
-The generation request contains:
-
-```text
-Job Title
-Industry
-Experience Level
-Skills
-Company Culture
-Special Requirements
-```
-
-### Processing
+The primary generation workflow uses Google Gemini through Spring AI.
 
 ```text
 User Input
-    ↓
+   ↓
 JobDescriptionRequest
-    ↓
+   ↓
 Spring Boot Controller
-    ↓
+   ↓
 AiJobDescriptionService
-    ↓
+   ↓
 Spring AI ChatClient
-    ↓
+   ↓
 Google Gemini
-    ↓
+   ↓
 Structured JobDescriptionResponse
-    ↓
+   ↓
 React Frontend
 ```
 
-The generation prompt instructs the model to use the employer-provided information and avoid inventing unsupported salary, benefits, locations, technologies, certifications, policies or other employer-specific facts.
+The prompt instructs Gemini to use employer-provided information and avoid inventing unsupported salary, benefits, locations, technologies, certifications or other employer-specific facts.
 
-The response is converted into a structured DTO rather than returning unstructured text.
-
----
-
-## 4. Structured AI Response
-
-The generated response contains fields such as:
-
-```text
-jobTitle
-aboutTheRole
-responsibilities
-requiredSkills
-preferredSkills
-experience
-whatWeOffer
-companyDescription
-```
-
-The application then combines the AI-generated content with the employer-provided metadata such as:
-
-```text
-industry
-experienceLevel
-companyCulture
-specialRequirements
-```
-
-This keeps the generated content structured and editable.
+The response is converted into a structured DTO, making the generated JD easy to edit and persist.
 
 ---
 
-## 5. AI Analysis
+## 4. AI Analysis & Optimization
 
-A saved job description can be analyzed using Gemini.
+### AI Analysis
+
+A saved JD can be analyzed using Gemini.
 
 ```text
-Saved Job Description
-        ↓
-POST /{id}/analyze
-        ↓
+Saved JD
+   ↓
+/{id}/analyze
+   ↓
 AiJobAnalysisService
-        ↓
+   ↓
 Google Gemini
-        ↓
-Structured Analysis Response
-        ↓
+   ↓
+Structured Analysis
+   ↓
 AI Insights
 ```
 
-The analysis feature provides structured feedback about the job description rather than requiring the user to manually inspect the entire document.
+The analysis provides structured feedback instead of requiring the user to manually inspect the entire document.
 
-The backend uses a dedicated analysis DTO and parses the AI response into application data.
+### AI Optimization
 
----
-
-## 6. AI Optimization
-
-The optimization workflow improves an existing job description while preserving its original meaning.
+Optimization improves an existing JD while preserving its original meaning.
 
 ```text
 Existing JD
-    ↓
-POST /{id}/optimize
-    ↓
+   ↓
+/{id}/optimize
+   ↓
 AiJobOptimizationService
-    ↓
+   ↓
 Google Gemini
-    ↓
+   ↓
 Optimization Response
-    ↓
+   ↓
 Review Changes
-    ↓
+   ↓
 Apply Changes
-    ↓
+   ↓
 Edit / Save
 ```
 
-The optimization prompt instructs Gemini to:
+The optimization process focuses on:
 
-- Preserve the original meaning
-- Improve clarity
-- Improve professionalism
-- Improve structure
-- Improve ATS searchability
-- Make responsibilities specific and action-oriented
-- Avoid unsupported facts
-- Avoid inventing benefits, salary, location or requirements
-- Avoid introducing discriminatory requirements
-- Return a complete structured response
+- Clearer and more professional language
+- Better structure and ATS searchability
+- Specific, action-oriented responsibilities
+- Preserving the original meaning
+- Avoiding unsupported requirements, salary, benefits or location
+- Avoiding discriminatory requirements
 
-The optimization response includes:
-
-```text
-optimizedAboutTheRole
-optimizedResponsibilities
-optimizedRequiredSkills
-optimizedPreferredSkills
-optimizedExperience
-optimizedWhatWeOffer
-optimizedCompanyDescription
-changesMade
-```
-
-Users can review the proposed changes before applying them.
+Users review the proposed changes before applying them.
 
 ---
 
-## 7. ATS Keyword Analysis
+## 5. ATS Keyword Analysis
 
-JD Studio provides a lightweight ATS-style analysis system.
-
-It is intentionally implemented as a transparent heuristic rather than attempting to reproduce the proprietary algorithms of commercial ATS platforms.
+JD Studio includes a transparent heuristic ATS-style analysis rather than attempting to reproduce proprietary ATS algorithms.
 
 ### Keyword Sources
-
-The system considers:
 
 - Required Skills
 - Preferred Skills
@@ -235,82 +162,49 @@ The system considers:
 - Experience Level
 - Job Title
 
-### Searchable Content
+The searchable content includes the job title, role description, responsibilities, experience, company information, culture and special requirements.
 
-The skill lists themselves are not included in the searchable content when checking skill coverage.
+The skill lists themselves are excluded from searchable content so that a skill is not automatically counted as matched simply because it was entered as an input.
 
-This prevents every skill from automatically appearing as matched simply because it exists in the input list.
-
-The searchable content includes:
-
-- Job title
-- About the Role
-- Responsibilities
-- Experience
-- What We Offer
-- Company Description
-- Company Culture
-- Special Requirements
-
-### Coverage
-
-The score is calculated from three components:
+### Score
 
 ```text
 Required Skill Coverage  → 60%
 Preferred Skill Coverage → 20%
 Role/Context Coverage    → 20%
-```
 
-Overall:
-
-```text
 ATS Score =
     Required Coverage × 0.60
   + Preferred Coverage × 0.20
   + Role Coverage × 0.20
 ```
 
-The dashboard also shows:
-
-- Matched keywords
-- Missing keywords
-- Required matched/missing
-- Preferred matched/missing
-- Improvement suggestions
+The dashboard shows matched keywords, missing keywords and improvement suggestions.
 
 ---
 
-## 8. Frontend Workflow
-
-The frontend follows a four-stage creation workflow:
+## 6. Frontend Workflow
 
 ```text
 Role
-  ↓
+ ↓
 Requirements
-  ↓
+ ↓
 Company
-  ↓
+ ↓
 Review
-```
-
-After the JD is generated, users can:
-
-```text
+ ↓
 Generate
-   ↓
-Review
-   ↓
+ ↓
 Edit
-   ↓
+ ↓
 Analyze
-   ↓
+ ↓
 Optimize
-   ↓
-Apply Changes
-   ↓
-Save
+ ↓
+Review Changes
+ ↓
+Apply & Save
 ```
 
 Additional actions include:
@@ -321,94 +215,34 @@ Additional actions include:
 - Version history
 - Restore
 
----
+### JD Variations
 
-## 9. JD Variations
+The frontend provides:
 
-The interface provides three presentation styles:
+- **Standard** — complete balanced presentation
+- **Concise** — shorter presentation
+- **Impact-focused** — emphasizes impact-oriented content
 
-### Standard
-
-A complete, balanced version of the generated JD.
-
-### Concise
-
-A shorter presentation that reduces the amount of content shown in selected sections.
-
-### Impact-focused
-
-A presentation variation intended to emphasize impact-oriented content while using the generated JD as its source.
-
-These variations are handled on the frontend and do not create independent database records until saved.
+These variations are generated from the existing JD and do not create separate database records until saved.
 
 ---
 
-## 10. Draft Management
+## 7. Drafts & Version History
 
-Saved job descriptions can be retrieved from the H2 database.
-
-```text
-Generate
-   ↓
-Save
-   ↓
-Saved Draft
-   ↓
-Open
-   ↓
-Edit
-   ↓
-Save
-```
-
-Users can also:
-
-- Search drafts
-- Filter drafts by industry
-- Open drafts
-- Delete drafts
-- Duplicate drafts
-
----
-
-## 11. Version History
-
-The application maintains a separate version record for important job-description changes.
-
-Version records contain:
+Saved JDs can be opened, edited, deleted and duplicated.
 
 ```text
-id
-jobDescriptionId
-versionNumber
-changeType
-createdAt
-jobTitle
-industry
-experienceLevel
-aboutTheRole
-responsibilities
-requiredSkills
-preferredSkills
-experience
-whatWeOffer
-companyDescription
-companyCulture
-specialRequirements
+Generate → Save → Open → Edit → Save
 ```
 
-### Version Events
+The application maintains separate version records for important changes such as:
 
-The current workflow records changes such as:
+- Created
+- Edited
+- Duplicated
+- Restored
 
-```text
-Created
-Edited
-Duplicated
-Restored from Version X
-```
-
-### Restore Workflow
+### Restore
 
 ```text
 Version History
@@ -419,36 +253,16 @@ Restore
       ↓
 Current JD Updated
       ↓
-New Restore Version Created
+New Restore Version
 ```
 
-This preserves the history instead of silently replacing the previous state.
+This preserves previous states instead of silently replacing history.
 
 ---
 
-## 12. Duplicate Workflow
+## 8. Backend Architecture
 
-A saved JD can be duplicated.
-
-```text
-Existing JD
-    ↓
-Duplicate
-    ↓
-New JobDescription Entity
-    ↓
-New Database ID
-    ↓
-New Draft
-```
-
-The duplicated job description retains the original content but exists as a separate database record.
-
----
-
-## 13. Backend Architecture
-
-The backend follows a layered architecture.
+The backend follows a layered architecture:
 
 ```text
 Controller
@@ -460,21 +274,13 @@ Repository
 H2 Database
 ```
 
-### Controller
+### Controllers
+Handle HTTP requests, request bodies, path variables, endpoint mapping and validation.
 
-Handles:
+### DTOs
+Separate API request/response structures from persistence entities.
 
-- HTTP requests
-- Path variables
-- Request bodies
-- REST endpoint mapping
-- Request validation
-
-### DTO
-
-Separates API request/response structures from persistence entities.
-
-Examples include:
+Examples:
 
 - `JobDescriptionRequest`
 - `JobDescriptionResponse`
@@ -483,134 +289,88 @@ Examples include:
 
 ### Services
 
-Business logic is separated into services for different responsibilities.
-
-Important services include:
-
 - `JobDescriptionService`
 - `AiJobDescriptionService`
 - `AiJobAnalysisService`
 - `AiJobOptimizationService`
 
-### Repository
+### Repositories
 
-Spring Data JPA repositories provide database access.
+Spring Data JPA repositories provide access to job descriptions and their versions.
 
-Repositories exist for:
-
-- Job descriptions
-- Job description versions
-
-### Entities
-
-The main persistence models are:
+### Main Entities
 
 - `JobDescription`
 - `JobDescriptionVersion`
 
 ---
 
-## 14. REST API
+## 9. REST API
 
-### AI Generation
+### Generation
 
 ```http
 POST /api/job-descriptions/generate-ai
 ```
 
-Generates a job description using Gemini.
-
-### Legacy Generation
+Gemini-powered generation.
 
 ```http
 POST /api/job-descriptions/generate
 ```
 
-A legacy deterministic generation endpoint retained for compatibility.
+Legacy deterministic generation endpoint retained for compatibility.
 
-### Save
-
-```http
-POST /api/job-descriptions/save
-POST /api/job-descriptions/save-edited
-```
-
-### Retrieve
+### Job Descriptions
 
 ```http
-GET /api/job-descriptions
-GET /api/job-descriptions/{id}
+GET    /api/job-descriptions
+GET    /api/job-descriptions/{id}
+PUT    /api/job-descriptions/{id}
+POST   /api/job-descriptions/save
+POST   /api/job-descriptions/save-edited
+DELETE /api/job-descriptions/{id}
+POST   /api/job-descriptions/{id}/duplicate
 ```
 
-### Update
-
-```http
-PUT /api/job-descriptions/{id}
-```
-
-### AI Analysis
+### AI
 
 ```http
 POST /api/job-descriptions/{id}/analyze
-```
-
-### AI Optimization
-
-```http
 POST /api/job-descriptions/{id}/optimize
-```
-
-### Duplicate
-
-```http
-POST /api/job-descriptions/{id}/duplicate
 ```
 
 ### Version History
 
 ```http
-GET /api/job-descriptions/{id}/versions
-
-GET /api/job-descriptions/{id}/versions/{versionId}
-
+GET  /api/job-descriptions/{id}/versions
+GET  /api/job-descriptions/{id}/versions/{versionId}
 POST /api/job-descriptions/{id}/versions/{versionId}/restore
 ```
 
-### Delete
-
-```http
-DELETE /api/job-descriptions/{id}
-```
-
 ---
 
-## 15. Validation
+## 10. Validation & Database
 
-The backend uses Jakarta Validation for generation requests.
+### Validation
 
-Required fields are:
+Generation requests require:
 
-```text
-Job Title
-Industry
-Experience Level
-At least one Skill
-Company Culture
-```
+- Job Title
+- Industry
+- Experience Level
+- At least one Skill
+- Company Culture
 
 Special requirements are optional.
 
-Validation prevents incomplete requests from reaching the generation layer.
+Jakarta Validation prevents incomplete requests from reaching the generation layer.
 
----
+### Database
 
-## 16. Database Design
+H2 stores the current JD and version history.
 
-### Job Descriptions
-
-The `job_descriptions` table stores the current state.
-
-Important fields:
+Important `JobDescription` fields include:
 
 ```text
 id
@@ -628,305 +388,182 @@ companyCulture
 specialRequirements
 ```
 
-### Versions
-
-The `job_description_versions` table stores historical snapshots.
-
-A version references the corresponding job description through:
-
-```text
-jobDescriptionId
-```
-
-Version numbers are maintained per job description.
+Responsibilities and skill lists are stored as JSON strings to keep the initial data model simple.
 
 ---
 
-## 17. JSON Storage
+## 11. Gemini Configuration
 
-Responsibilities and skill lists are stored as JSON strings in the database.
-
-For example:
-
-```json
-[
-  "Java",
-  "Spring Boot",
-  "REST APIs"
-]
-```
-
-This keeps the initial entity design simple and avoids multiple relationship tables.
-
-For a production system with more complex querying, these fields could be normalized or stored using database-native JSON support.
-
----
-
-## 18. Gemini Configuration
-
-The application uses Spring AI's Google Gemini integration.
-
-The main configuration is:
+Spring AI is configured to use Google Gemini:
 
 ```properties
 spring.ai.google.genai.api-key=${GEMINI_API_KEY}
 spring.ai.google.genai.chat.model=gemini-3.6-flash
 ```
 
-The API key is provided through an environment variable rather than being stored directly in source code.
-
-Windows PowerShell:
+The API key is supplied through an environment variable:
 
 ```powershell
 $env:GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
 ```
 
-Persistent Windows user variable:
-
-```powershell
-[System.Environment]::SetEnvironmentVariable(
-    "GEMINI_API_KEY",
-    "YOUR_GEMINI_API_KEY",
-    "User"
-)
-```
-
-A new terminal/IDE session should be started after setting the persistent variable.
+A real API key must never be committed to source control.
 
 ---
 
-## 19. Error Handling
+## 12. Error Handling
 
-The application handles common failure scenarios including:
+The application handles common failures including:
 
-- Invalid API keys
+- Invalid API credentials
 - Gemini quota exhaustion
 - AI response parsing errors
-- Missing saved JD IDs
+- Missing JD IDs
 - Invalid requests
 - Backend API failures
 
-AI services use raw model content with explicit JSON parsing where necessary.
+AI services use explicit JSON parsing where necessary to handle malformed or incomplete model responses.
 
-This approach provides greater control over malformed or incomplete model responses than relying entirely on automatic structured-output conversion.
-
-The frontend also surfaces useful backend error messages when available.
+The frontend surfaces useful backend error messages when available.
 
 ---
 
-## 20. Testing
+## 13. Testing
 
 Backend tests use Spring Boot Test and JUnit.
-
-Run:
 
 ```powershell
 cd jobdescription
 .\mvnw.cmd test
 ```
 
-Existing tests cover core backend behavior such as:
+Existing tests cover core backend behavior such as application context loading, generation and generated content structure.
 
-- Application context loading
-- Job description generation
-- Generated content structure
-- Required skills
-- Industry-specific behavior
-
-The AI endpoints depend on an external Gemini API and therefore should also be tested through integration/manual workflow testing when valid API access and quota are available.
+AI endpoints also require manual/integration testing with valid Gemini API access and quota.
 
 ---
 
-## 21. Design Trade-offs
+## 14. Design Trade-offs
 
-### Gemini vs Deterministic Generation
-
-Gemini provides more flexible and natural job-description language than a fixed template system.
-
-Trade-offs include:
+### Gemini
 
 **Advantages**
+- Natural language generation
+- Context-aware content
+- AI analysis and optimization
+- Flexible generation
 
-- More natural language
-- Better contextual generation
-- AI-powered analysis
-- AI-powered optimization
-- Flexible content generation
+**Trade-offs**
+- Requires API key and quota
+- External service dependency
+- Model-output parsing is required
 
-**Limitations**
+A deterministic generation endpoint is retained for compatibility.
 
-- Requires an API key
-- Subject to API availability and quota
-- Requires handling model-output parsing
-- Adds an external service dependency
+### H2
 
-A legacy deterministic generation endpoint is retained for compatibility.
-
----
-
-### H2 Database
-
-**Advantages**
-
-- Very simple local setup
-- No separate database server
-- Good for development and demonstration
-
-**Limitations**
-
-- Not intended as the final database for production-scale workloads
-- File-based local storage requires appropriate deployment configuration
-
-A production deployment could use PostgreSQL or another managed relational database.
-
----
+H2 provides simple local persistence without requiring a separate database server. For production deployment, PostgreSQL or another managed relational database would be more appropriate.
 
 ### JSON Storage
 
-**Advantages**
-
-- Simple entity model
-- Easy persistence of list fields
-- Low initial implementation complexity
-
-**Limitations**
-
-- Less convenient for relational querying
-- Validation/querying of individual list elements is more limited
-
-A production implementation could normalize these relationships.
-
----
+JSON storage keeps the initial entity model simple. A production system could normalize list relationships or use database-native JSON support for more advanced querying.
 
 ### Heuristic ATS
 
-**Advantages**
-
-- Transparent
-- Explainable
-- Easy to implement
-- Easy to test
-- No dependency on proprietary ATS algorithms
-
-**Limitation**
-
-It does not represent the exact scoring system used by commercial ATS platforms.
+The ATS system is transparent and explainable, but it does not represent the exact scoring system used by commercial ATS platforms.
 
 ---
 
-## 22. Security Considerations
+## 15. Security
 
-The current application is designed primarily for local/demo usage.
+The current application is primarily intended for local/demo usage.
 
-Important considerations include:
-
-- API keys must not be committed to Git
-- Gemini keys should be supplied through environment variables
-- Authentication is not currently implemented
-- Authorization is not currently implemented
-- CORS is configured for the local frontend
-- Production deployment should use HTTPS
-- Production secrets should be managed using a secure secret-management solution
+- API keys must not be committed to Git.
+- Gemini keys are supplied through environment variables.
+- Authentication and authorization are not currently implemented.
+- CORS is configured for the local frontend.
+- Production deployment should use HTTPS and secure secret management.
 
 ---
 
-## 23. Current End-to-End Flow
-
-The complete workflow is:
+## 16. End-to-End Flow
 
 ```text
-                Employer Inputs
-                      │
-                      ▼
-               React Generator
-                      │
-                      ▼
-              Gemini Generation
-                      │
-                      ▼
-               Generated JD
-                      │
-          ┌───────────┼────────────┐
-          │           │            │
-          ▼           ▼            ▼
-        Edit        ATS          Analyze
-          │        Analysis         │
-          │           │             ▼
-          │           │          AI Insights
-          │           │
-          └──────┬────┘
-                 ▼
-             Optimize
-                 │
-                 ▼
-          Review Changes
-                 │
-                 ▼
-          Apply Optimization
-                 │
-                 ▼
-               Save
-                 │
-                 ▼
-           Version History
-            │          │
-            ▼          ▼
-          Restore    Duplicate
-            │
-            ▼
-          Export PDF
+Employer Inputs
+      ↓
+React Generator
+      ↓
+Gemini Generation
+      ↓
+Generated JD
+      ↓
+ ┌────┼─────────┐
+ ▼    ▼         ▼
+Edit  ATS     Analyze
+      Analysis   ↓
+                 AI Insights
+ └────┬──────────┘
+      ↓
+   Optimize
+      ↓
+Review Changes
+      ↓
+Apply Optimization
+      ↓
+Save
+      ↓
+Version History
+   ┌──┴──┐
+   ▼     ▼
+Restore Duplicate
+   │
+   ▼
+Export PDF
 ```
 
 ---
 
-## 24. Future Improvements
+## 17. Future Improvements
 
-Potential future extensions include:
-
-- User authentication
-- Role-based authorization
-- PostgreSQL production database
+- User authentication and role-based authorization
+- PostgreSQL production deployment
 - Cloud deployment
 - Advanced semantic ATS analysis
 - Job board integrations
 - Collaborative editing
-- Candidate-facing JD previews
+- Candidate-facing previews
 - Analytics and reporting
-- Configurable AI generation controls
-- Automated integration tests for Gemini workflows
-- Better observability and centralized logging
-- Rate-limit and quota-aware retry handling
+- More configurable AI controls
+- Expanded Gemini integration tests
+- Centralized logging and observability
+- Rate-limit and quota-aware retries
 
 ---
 
-## 25. Conclusion
+## 18. Conclusion
 
-JD Studio provides a complete workflow for generating and managing professional job descriptions.
-
-The solution combines:
+JD Studio provides an end-to-end workflow for generating and managing professional job descriptions.
 
 ```text
 React
-        +
+  +
 Spring Boot
-        +
+  +
 Spring AI
-        +
+  +
 Google Gemini
-        +
+  +
 H2
-        +
-ATS Keyword Analysis
-        +
+  +
+ATS Analysis
+  +
 AI Analysis
-        +
+  +
 AI Optimization
-        +
+  +
 Version History
-        +
+  +
 PDF Export
 ```
 
-The application separates presentation, REST APIs, business logic, AI services and persistence into modular components.
-
-This makes JD Studio suitable as a full-stack demonstration project while leaving clear paths for future improvements such as authentication, production database infrastructure, cloud deployment and more advanced AI/ATS capabilities.
+The modular separation of frontend, REST APIs, business logic, AI services and persistence makes JD Studio a strong full-stack demonstration project with clear paths for future production improvements.
